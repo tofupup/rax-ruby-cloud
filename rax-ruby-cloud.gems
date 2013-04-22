@@ -1,0 +1,12 @@
+# ruby-cloud.gems generated gem export file. Note that any env variable settings will be missing. Append these after using a ';' field separator
+
+builder -v3.2.0
+excon -v0.20.1
+fog -v1.10.1
+formatador -v0.2.4
+mime-types -v1.22
+multi_json -v1.7.2
+net-scp -v1.1.0
+net-ssh -v2.6.7
+nokogiri -v1.5.9
+ruby-hmac -v0.4.0
