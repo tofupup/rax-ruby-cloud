@@ -60,14 +60,15 @@ optparse = OptionParser.new do |opts|
 end
 optparse.parse!
 
+# check to insure both required options are provided
 if ARGV.length != 2
   p optparse
   exit
 end
-
 options.fqdn = ARGV.shift
 options.ip = ARGV.shift
 
+# insure that provided IP address is valid
 begin
   addr = IPAddr.new(options.ip)
 rescue ArgumentError
@@ -75,6 +76,7 @@ rescue ArgumentError
   exit
 end
 
+# make sure that provided fqdn meets minimum requirements
 fqdnsplit = options.fqdn.split('.')
 if fqdnsplit.length < 3
   puts "#{options.fqdn} is not a valid fully qualified domain name"
@@ -89,23 +91,29 @@ service = Fog::DNS.new({
   :rackspace_api_key    => rackspace_api_key,
 })
 
+# check if domain of fqdn exists
 zone = service.zones.find {|z| z.domain == domain}
+
+# if zone doesn't exist, and we don't want to create
 if zone == nil and not options.create
   puts "Zone #{domain} does not exist.  Specify --create to create"
   exit
 end
 
+# if we're here and zone doesn't exist, create it
 if zone == nil
   puts "Zone #{domain} does not exist.  Creating"
   zone = service.zones.create(
     :domain => domain, :email => options.adminemail)
 end
+
+# try to create A record for fqdn and address
 begin
   record = zone.records.create(
     :value => addr.to_s,  # in case there were spaces or something in IP
     :name => options.fqdn,
     :type => 'A')
   puts "Address record for #{record.name} with address #{record.value} created"
-rescue Fog::DNS::Rackspace::CallbackError
+rescue Fog::DNS::Rackspace::CallbackError # hostname already has A record
   puts "Address record for #{options.fqdn} already exists"
 end
