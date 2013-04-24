@@ -53,7 +53,7 @@ options.create = false
 options.adminemail = nil
 
 optparse = OptionParser.new do |opts|
-  opts.banner = "Usage: challenge2.rb [options] fqdn ipaddress"
+  opts.banner = "Usage: challenge4.rb [options] fqdn ipaddress"
   opts.on('--datacenter DC', [:dfw, :ord], 'Create server in datacenter (dfw, ord)') {|dc| options.dc = dc}
   opts.on('--create EMAIL', 'Create domain if it doesn\'t exist with admin email EMAIL') {|e| options.create = true; options.adminemail = e}
   opts.on('-h','--help','Show help') {puts opts; exit}
