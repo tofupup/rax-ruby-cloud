@@ -4,31 +4,34 @@ rax-ruby-cloud
 Rackspace support is having an API challenge to encourage learning and
 use of the cloud API.  I want to learn Ruby for chef.  Let's do both.
 
-### Challenge 1
+Turns out some functionality isn't really mature in fog, so will use
+pyrax for some of the challenges.
+
+### Challenge 1 - ruby
 
 Write a script that builds three 512 MB Cloud Servers that follow a similar naming convention. (ie., web1, web2, web3) and returns the IP and login credentials for each server. Use any image you want. ***Worth 1 point***
 
-### Challenge 2
+### Challenge 2 - ruby
 
 Write a script that clones a server (takes an image and deploys the image as a new server). ***Worth 2 Point***
 
-### Challenge 3
+### Challenge 3 - ruby
 
 Write a script that accepts a directory as an argument as well as a container name. The script should upload the contents of the specified directory to the container (or create it if it doesn't exist). The script should handle errors appropriately. (Check for invalid paths, etc.) ***Worth 2 Points***
 
-### Challenge 4
+### Challenge 4 - ruby
 
 Write a script that uses Cloud DNS to create a new A record when passed a FQDN and IP address as arguments. ***Worth 1 Point***
 
-### Challenge 5
+### Challenge 5 - python
 
 Write a script that creates a Cloud Database instance. This instance should contain at least one database, and the database should have at least one user that can connect to it. ***Worth 1 Point***
 
-### Challenge 6
+### Challenge 6 - ruby
 
 Write a script that creates a CDN-enabled container in Cloud Files. ***Worth 1 Point***
 
-### Challenge 7
+### Challenge 7 - python
 
 Write a script that will create 2 Cloud Servers and add them as nodes to a new Cloud Load Balancer. ***Worth 3 Points***
 
