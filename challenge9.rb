@@ -56,8 +56,8 @@ options.dc = :dfw
 
 optparse = OptionParser.new do |opts|
   opts.banner = "Usage: challenge9.rb [options] fqdn"
-  opts.on('-f', '--flavor FLAVOR', 'Flavor ID for servers, default #{options.flavor}') {|f| options.flavor = f}
-  opts.on('-i', '--image ID', 'ID of image to use for servers, default #{options.image}') { |i| options.image = i }
+  opts.on('-f', '--flavor FLAVOR', 'Flavor ID for servers') {|f| options.flavor = f}
+  opts.on('-i', '--image ID', 'ID of image to use for servers') { |i| options.image = i }
   opts.on('-t', '--interval INTERVAL', OptionParser::DecimalInteger, 'Sleep INTERVAL seconds between status checks') do |i|
     options.interval = i
   end

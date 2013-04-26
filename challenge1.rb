@@ -54,14 +54,14 @@ options.interval = 5
 options.dc = :dfw
 
 optparse = OptionParser.new do |opts|
-  opts.banner = "Usage: challenge2.rb [options] destname"
-  opts.on('-n', '--name NAME', 'Base name of servers, ie. web for web1, web2, etc.  default #{options.basename}') { |n| options.namebase = n }
-  opts.on('-f', '--flavor FLAVOR', 'Flavor ID for servers, default #{options.flavor}') {|f| options.flavor = f}
-  opts.on('-i', '--image ID', 'ID of image to use for servers, default #{options.image}') { |i| options.image = i }
+  opts.banner = "Usage: challenge1.rb [options] destname"
+  opts.on('-n', '--name NAME', "Base name of servers, ie. web for web1, web2, etc.") { |n| options.namebase = n }
+  opts.on('-f', '--flavor FLAVOR', 'Flavor ID for servers') {|f| options.flavor = f}
+  opts.on('-i', '--image ID', 'ID of image to use for servers') { |i| options.image = i }
   opts.on('-t', '--interval INTERVAL', OptionParser::DecimalInteger, 'Sleep INTERVAL seconds between status checks') do |i|
     options.interval = i
   end
-  opts.on('-c', '--count COUNT', OptionParser::DecimalInteger, 'Create COUNT new servers, default #{options.numservers}') do |n|
+  opts.on('-c', '--count COUNT', OptionParser::DecimalInteger, 'Create COUNT new servers') do |n|
     options.numservers = n
   end
   opts.on('--datacenter DC', [:dfw, :ord], 'Create server in datacenter (dfw, ord)') {|dc| options.dc = dc}
