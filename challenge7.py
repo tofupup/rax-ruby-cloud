@@ -70,7 +70,7 @@ if image is None:
     print "Image %s not found.  Please specify an existing image ID:" % (args.image)
     for i in images:
         print "ID: %s  Name: %s" % (i.id, i.name)
-    exit()
+    exit(1)
 
 flavors = cs.flavors.list()
 flavor = None
@@ -81,7 +81,7 @@ if flavor is None:
     print "Flavor %s not found.  Please specify an existing flavor ID:" % (args.flavor)
     for f in flavors:
         print "ID: %s  Name: %s" % (f.id, f.name)
-    exit()
+    exit(1)
 
 print "Creating %d servers" % (args.count)
 print "Image: %s" % (cs.images.get(args.image).name)
@@ -111,7 +111,7 @@ while len(completed) < args.count:
                 sname = server.name
                 print "UNKNOWN SERVER STATUS FOR %s: %s...exiting..." \
                     % (sname, server.status)
-                exit()
+                exit(1)
 
 print
 for server in completed:

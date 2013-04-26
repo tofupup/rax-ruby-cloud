@@ -64,7 +64,7 @@ if flavor is None:
     print "Flavor %s not found.  Please specify an existing flavor ID:" % (args.flavor)
     for f in flavors:
         print "ID: %s  Name: %s" % (f.id, f.name)
-    exit
+    exit(1)
 
 print "Creating instance %s" % (args.instname)
 inst = cs.create(args.instname, flavor=flavor, volume=args.size)
