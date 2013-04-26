@@ -51,6 +51,7 @@ options.flavor = "2"
 options.image = "5cebb13a-f783-4f8c-8058-c4182c724ccd"
 options.fqdn = nil
 options.interval = 5
+options.timeout = 1200
 options.dc = :dfw
 
 optparse = OptionParser.new do |opts|
@@ -59,6 +60,9 @@ optparse = OptionParser.new do |opts|
   opts.on('-i', '--image ID', 'ID of image to use for servers, default #{options.image}') { |i| options.image = i }
   opts.on('-t', '--interval INTERVAL', OptionParser::DecimalInteger, 'Sleep INTERVAL seconds between status checks') do |i|
     options.interval = i
+  end
+  opts.on('--timeout TIMEOUT', OptionParser::DecimalInteger, 'Wait maximum of TIMEOUT seconds for build to complete') do |t|
+    options.timeout = t
   end
   opts.on('--datacenter DC', [:dfw, :ord], 'Create server in datacenter (dfw, ord)') {|dc| options.dc = dc}
   opts.on('-h','--help','Show help') {puts opts; exit}
@@ -123,8 +127,8 @@ server = service.servers.create({:name => options.fqdn,
 
 # watch for server builds to complete.  check every 5 seconds, and move
 # server to complete array once done to prevent repeated API calls
-print "Monitoring for server creation completion"
-server.wait_for(600, options.interval) {print "."; STDOUT.flush; ready?}
+print "Monitoring for server creation completion.  Maximum timeout #{options.timeout}"
+server.wait_for(options.timeout, options.interval) {print "."; STDOUT.flush; ready?}
 
 # sometimes if printing immediately, the network addresses are not properly populated
 while server.ipv4_address == ""

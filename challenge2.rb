@@ -50,6 +50,7 @@ options.id = nil
 options.interval = 5
 options.dc = :dfw
 options.delete = false
+options.timeout = 3600
 
 optparse = OptionParser.new do |opts|
   opts.banner = "Usage: challenge2.rb [options] destname"
@@ -57,6 +58,9 @@ optparse = OptionParser.new do |opts|
   opts.on('-i', '--id ID', 'ID of server to clone') { |i| options.id = i }
   opts.on('-t', '--interval INTERVAL', OptionParser::DecimalInteger, 'Sleep INTERVAL seconds between status checks') do |i|
     options.interval = i
+  end
+  opts.on('--timeout TIMEOUT', OptionParser::DecimalInteger, 'Wait maximum of TIMEOUT seconds for build to complete') do |t|
+    options.timeout = t
   end
   opts.on('--delete', 'Delete image after clone is built') {options.delete = true}
   opts.on('--datacenter DC', [:dfw, :ord], 'Create server in datacenter (dfw, ord)') {|dc| options.dc = dc}
@@ -115,7 +119,7 @@ end
 # create an image of source server
 print "Building image of #{toclone.name}"
 image = toclone.create_image(imagename)
-image.wait_for(3600, options.interval) { print ".";  STDOUT.flush; ready?}
+image.wait_for(options.timeout, options.interval) { print ".";  STDOUT.flush; ready?}
 puts "complete"
 
 # create server from built image, with same flavor as source server
@@ -123,7 +127,7 @@ print "Building clone #{options.destname} from image of #{toclone.name}"
 server = service.servers.create(:name => options.destname,
                                 :flavor_id => toclone.flavor.id,
                                 :image_id => image.id)
-server.wait_for(600, options.interval) { print "."; STDOUT.flush; ready?}
+server.wait_for(options.timeout, options.interval) { print "."; STDOUT.flush; ready?}
 puts "complete"
 
 # since sometimes the addresses aren't immediately populated when the
