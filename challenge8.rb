@@ -54,14 +54,14 @@ options.container = nil
 options.fqdn = nil
 
 optparse = OptionParser.new do |opts|
-  opts.banner = "Usage: challenge6.rb [options] container fqdn"
+  opts.banner = "Usage: challenge8.rb [options] container fqdn"
   opts.on('-i', '--index NAME', 'Use NAME for index file') {|n| options.name = n}
   opts.on('--datacenter DC', [:dfw, :ord], 'Create server in datacenter (dfw, ord)') {|dc| options.dc = dc}
   opts.on('-h','--help','Show help') {puts opts; exit}
 end
 optparse.parse!
 
-# must specify a name for the cloned server
+# must specify a container and fqdn
 if ARGV.length != 2
   p optparse
   exit
@@ -70,6 +70,7 @@ end
 options.container = ARGV.shift
 options.fqdn = ARGV.shift
 
+# insure fqdn is proper length
 fqdnsplit = options.fqdn.split('.')
 if fqdnsplit.length < 3
   puts "#{options.fqdn} is not a valid fully qualified domain name"
@@ -83,8 +84,8 @@ dnsservice = Fog::DNS.new({
   :rackspace_api_key    => rackspace_api_key,
 })
 
+# check if domain exists
 zone = dnsservice.zones.find {|z| z.domain == domain}
-
 if zone == nil
   puts "Zone #{domain} does not exist.  Exiting..."
   exit
@@ -98,21 +99,25 @@ service = Fog::Storage.new({
   :rackspace_region => options.dc #Use specified region
 })
 
+# check if container exists
 container = service.directories.get(options.container)
 if container
   puts "Container #{options.container} already exists.  Exiting..."
   exit
 end
 
+# create container with pointer to index file
 container = service.directories.create(
   :key => options.container,
   :public => true,
   :metadata => {"Web-Index" => options.name})
 
+# create an index file
 file = container.files.create(:key => options.name, :body => "<html><h1>Howdy Rackers!</h1></html>")
 
 puts "Public container #{options.container} created.  URL #{container.public_url}"
 
+# create a CNAME pointing to the URL of the container
 begin
   record = zone.records.create(
     :value => container.public_url,
@@ -120,6 +125,6 @@ begin
     :type => 'CNAME')
   puts "CNAME created.  New URL http://#{record.name}/"
 rescue Fog::DNS::Rackspace::CallbackError # cname already exists
-  puts "Address record for #{options.fqdn} already exist.  Please specify new CNAME"
+  puts "CNAME record for #{options.fqdn} already exist.  Please specify new CNAME"
   exit
 end
