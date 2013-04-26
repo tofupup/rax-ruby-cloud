@@ -61,7 +61,7 @@ Write an application that when passed the arguments FQDN, image, and flavor it c
 
 ***Worth 2 Points***
 
-### Challenge 10
+### Challenge 10 - python
 
 Write an application that will:
 

@@ -69,6 +69,7 @@ args = parser.parse_args()
 
 pyrax.set_credential_file(os.path.expanduser("~/.rackspace_cloud_credentials"))
 
+# make sure ssh key file exists
 try:
     sshfile = open(os.path.expanduser(args.sshkeyfile))
     sshkey = sshfile.read()
@@ -76,6 +77,7 @@ except IOError:
     print "Could not load SSH key file %s.  Exiting" % (args.sshkeyfile)
     exit(1)
 
+# make sure HTML error file exists
 try:
     errorfile = open(os.path.expanduser(args.errorfile))
     errorpage = errorfile.read()
@@ -83,6 +85,7 @@ except IOError:
     print "Could not open HTML error page %s.  Exiting" % (args.errorfile)
     exit(1)
 
+# make sure FQDN provided is a good hostname
 hostwords = args.fqdn.split('.')
 if len(hostwords) < 3:
     print "%s is not a valid hostname.  Exiting" % (args.fqdn)
@@ -94,6 +97,7 @@ clb = pyrax.connect_to_cloud_loadbalancers(region=args.dc)
 cf = pyrax.connect_to_cloudfiles(region=args.dc)
 cdns = pyrax.connect_to_cloud_dns(region=args.dc)
 
+# check if container name exists
 containers = cf.get_all_containers()
 container = None
 for c in containers:
@@ -105,6 +109,7 @@ if container is not None:
     exit(1)
 container = cf.create_container(args.container)
 
+# make sure zone for DNS exists
 zones = cdns.list()
 zone = None
 for z in zones:
@@ -117,6 +122,7 @@ if zone is None:
         print "%s" % (z.name)
     exit(1)
 
+# insure image is valid
 images = cs.images.list()
 image = None
 for i in images:
@@ -129,6 +135,7 @@ if image is None:
         print "ID: %s  Name: %s" % (i.id, i.name)
     exit(1)
 
+# make sure flavor is valid
 flavors = cs.flavors.list()
 flavor = None
 for f in flavors:
@@ -146,8 +153,8 @@ print "Image: %s" % (cs.images.get(args.image).name)
 print "Flavor: %s" % (cs.flavors.get(args.flavor).name)
 print "Name base: %s" % (args.name)
 
+# create servers
 servers = []
-
 for i in xrange(0, args.count):
     name = '%s%d' % (args.name, i+1)
     print "Creating server %s..." % (name)
@@ -155,6 +162,7 @@ for i in xrange(0, args.count):
         cs.servers.create(name, args.image, args.flavor,
                           files={"/root/.ssh/authorized_keys": sshkey}))
 
+# monitor for server build completion
 completed = []
 while len(completed) < args.count:
     sleep(args.interval)
@@ -174,6 +182,72 @@ while len(completed) < args.count:
                 exit()
 
 print
+
+# add servers to load balancer
+print "Building load balancer %s" % (args.lbname)
+nodes = []
+for i in completed:
+    i.get()
+    nodes.append(clb.Node(address=i.networks["private"][0], port=args.srvport,
+                          condition="ENABLED"))
+
+# set what type of VIP address we want
+if not args.private:
+    vip = clb.VirtualIP(type="PUBLIC")
+else:
+    vip = clb.VirtualIP(type="SERVICENET")
+
+# create load balancer
+lb = clb.create(args.lbname, port=args.port, protocol="HTTP",
+                nodes=nodes, virtual_ips=[vip])
+
+# monitor for load balancer build completion
+while lb.status != "ACTIVE":
+    sleep(args.interval)
+    print "Checking status"
+    lb.get()
+print "Load balancer created.  Name: %s  Virtual IP: %s" \
+    % (lb.name, lb.virtual_ips[0].address)
+
+# create health monitor
+print "Adding HTTP health monitor"
+lb.add_health_monitor(type="HTTP", delay=10, timeout=10,
+                      attemptsBeforeDeactivation=3, path="/",
+                      statusRegex="^[234][0-9][0-9]$",
+                      bodyRegex=".* testing .*")
+
+# monitor for LB update to complete
+lb.get()
+while lb.status != "ACTIVE":
+    sleep(args.interval)
+    print "Checking status"
+    lb.get()
+
+# add custom error page to LB
+print "Setting error page from file %s" % (args.errorfile)
+lb.set_error_page(errorpage)
+
+# monitor for LB update to complete
+lb.get()
+while lb.status != "ACTIVE":
+    sleep(args.interval)
+    print "Checking status"
+    lb.get()
+
+# Add A record for VIP
+print "Creating A record for VIP with hostname %s" % (args.fqdn)
+zone.add_records({"type": "A", "name": args.fqdn,
+                  "data": lb.virtual_ips[0].address,
+                  "ttl": 300})
+
+# backup error page to cloud files
+basefile = os.path.basename(args.errorfile)
+print "Uploading error file %s to cloud files container %s" \
+    % (basefile, args.container)
+cloudfile = container.store_object(basefile, errorpage)
+
+# print server information
+print "Server information:"
 for server in completed:
     ipv4 = 0
     ipv6 = 1
@@ -184,56 +258,3 @@ for server in completed:
     print "Server  : %s\nIP      : %s\nIPv6    : %s\nUsername: %s\nPassword: %s\n" \
         % (server.name, server.networks['public'][ipv4],
            server.networks['public'][ipv6], "root", server.adminPass)
-
-print
-print "Building load balancer %s" % (args.lbname)
-nodes = []
-for i in completed:
-    i.get()
-    nodes.append(clb.Node(address=i.networks["private"][0], port=args.srvport,
-                          condition="ENABLED"))
-
-if not args.private:
-    vip = clb.VirtualIP(type="PUBLIC")
-else:
-    vip = clb.VirtualIP(type="SERVICENET")
-
-lb = clb.create(args.lbname, port=args.port, protocol="HTTP",
-                nodes=nodes, virtual_ips=[vip])
-
-while lb.status != "ACTIVE":
-    sleep(args.interval)
-    print "Checking status"
-    lb.get()
-
-print "Load balancer created.  Name: %s  Virtual IP: %s" \
-    % (lb.name, lb.virtual_ips[0].address)
-
-print "Adding HTTP health monitor"
-lb.add_health_monitor(type="HTTP", delay=10, timeout=10,
-                      attemptsBeforeDeactivation=3, path="/",
-                      statusRegex="^[234][0-9][0-9]$",
-                      bodyRegex=".* testing .*")
-lb.get()
-while lb.status != "ACTIVE":
-    sleep(args.interval)
-    print "Checking status"
-    lb.get()
-
-print "Setting error page from file %s" % (args.errorfile)
-lb.set_error_page(errorpage)
-lb.get()
-while lb.status != "ACTIVE":
-    sleep(args.interval)
-    print "Checking status"
-    lb.get()
-
-print "Creating A record for VIP with hostname %s" % (args.fqdn)
-zone.add_records({"type": "A", "name": args.fqdn,
-                  "data": lb.virtual_ips[0].address,
-                  "ttl": 300})
-
-basefile = os.path.basename(args.errorfile)
-print "Uploading error file %s to cloud files container %s" \
-    % (basefile, args.container)
-cloudfile = container.store_object(basefile, errorpage)

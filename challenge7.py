@@ -61,6 +61,7 @@ pyrax.set_credential_file(os.path.expanduser("~/.rackspace_cloud_credentials"))
 cs = pyrax.connect_to_cloudservers(region=args.dc)
 clb = pyrax.connect_to_cloud_loadbalancers(region=args.dc)
 
+# check if image is valid
 images = cs.images.list()
 image = None
 for i in images:
@@ -72,6 +73,7 @@ if image is None:
         print "ID: %s  Name: %s" % (i.id, i.name)
     exit(1)
 
+# insure flavor is valid
 flavors = cs.flavors.list()
 flavor = None
 for f in flavors:
@@ -88,13 +90,14 @@ print "Image: %s" % (cs.images.get(args.image).name)
 print "Flavor: %s" % (cs.flavors.get(args.flavor).name)
 print "Name base: %s" % (args.name)
 
+# build servers
 servers = []
-
 for i in xrange(0, args.count):
     name = '%s%d' % (args.name, i+1)
     print "Creating server %s..." % (name)
     servers.append(cs.servers.create(name, args.image, args.flavor))
 
+# monitor for server build completion
 completed = []
 while len(completed) < args.count:
     sleep(args.interval)
@@ -113,6 +116,7 @@ while len(completed) < args.count:
                     % (sname, server.status)
                 exit(1)
 
+# print server login information
 print
 for server in completed:
     ipv4 = 0
@@ -124,6 +128,7 @@ for server in completed:
         % (server.name, server.networks['public'][ipv4],
            server.networks['public'][ipv6], "root", server.adminPass)
 
+# configure LB with built servers
 print
 print "Building load balancer %s" % (args.lbname)
 nodes = []
@@ -132,17 +137,21 @@ for i in completed:
     nodes.append(clb.Node(address=i.networks["private"][0], port=args.srvport,
                           condition="ENABLED"))
 
+# set if VIP will be private or not
 if not args.private:
     vip = clb.VirtualIP(type="PUBLIC")
 else:
     vip = clb.VirtualIP(type="SERVICENET")
 
+# create load balancer
 lb = clb.create(args.lbname, port=args.port, protocol=args.protocol, nodes=nodes,
                 virtual_ips=[vip])
 
+# monitor for load balancer build completion
 while lb.status != "ACTIVE":
     sleep(args.interval)
     print "Checking status"
     lb.get()
 
+# output load balancer VIP
 print "Load balancer created.  Name: %s  Virtual IP: %s" % (lb.name, lb.virtual_ips[0].address)

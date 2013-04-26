@@ -70,12 +70,14 @@ service = Fog::Storage.new({
   :rackspace_region => options.dc #Use specified region
 })
 
+# check if container exists
 container = service.directories.get(options.container)
 if container
   puts "Container #{options.container} already exists.  Exiting..."
   exit
 end
 
+# create public container
 container = service.directories.create(
   :key => options.container,
   :public => true)

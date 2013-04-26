@@ -70,6 +70,7 @@ end
 options.srcdir = ARGV.shift
 options.container = ARGV.shift
 
+# insure source dir exists
 if not File.directory?(options.srcdir)
   puts "Source directory must exist"
   exit
@@ -83,14 +84,17 @@ service = Fog::Storage.new({
   :rackspace_region => options.dc #Use specified region
 })
 
+# make sure container exists
 container = service.directories.get(options.container)
 if (container == nil) && (not options.create)
   puts "Container #{options.container} does not exist and nocreate is set"
   exit
 end
 
+# create container if it doesn't exist
 container = service.directories.create(:key => options.container) if container == nil
 
+# upload all files in directory to container
 puts "Uploading all files from directory #{options.srcdir} to container #{options.container}"
 Dir.foreach(options.srcdir) do |file|
   next if file == '.' or file == '..' or File.directory?(file)

@@ -55,6 +55,7 @@ pyrax.set_credential_file(os.path.expanduser("~/.rackspace_cloud_credentials"))
 
 cs = pyrax.connect_to_cloud_databases(region=args.dc)
 
+# check for valid flavor
 flavors = cs.list_flavors()
 flavor = None
 for f in flavors:
@@ -66,19 +67,25 @@ if flavor is None:
         print "ID: %s  Name: %s" % (f.id, f.name)
     exit(1)
 
+# create database instance
 print "Creating instance %s" % (args.instname)
 inst = cs.create(args.instname, flavor=flavor, volume=args.size)
+
+# monitor for instance build completion
 while inst.status != "ACTIVE":
     print "Instance %s still building..." % (inst.name)
     inst.get()
     sleep(args.interval)
 
+# create database
 print "Creating database %s" % (args.dbname)
 db = inst.create_database(args.dbname)
 
+# add user to database
 print "Creating user %s/%s" % (args.dbuser, args.dbpass)
 user = inst.create_user(name=args.dbuser, password=args.dbpass,
                         database_names=[args.dbname])
 
+# output instance hostname, etc
 print "Hostname: %s  DB: %s    Username/password: %s/%s" \
     % (inst.hostname, db.name, user.name, args.dbpass)
