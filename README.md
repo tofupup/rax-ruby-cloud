@@ -4,8 +4,8 @@ rax-ruby-cloud
 Rackspace support is having an API challenge to encourage learning and
 use of the cloud API.  I want to learn Ruby for chef.  Let's do both.
 
-Turns out some functionality isn't really mature in fog, so will use
-pyrax for some of the challenges.
+Turns out some functionality isn't really mature in fog, or I just don't
+understand how to implement it, so I'll use pyrax for some of the challenges.
 
 ### Challenge 1 - ruby
 
@@ -65,7 +65,7 @@ Write an application that will:
 - Create Three servers as nodes behind the LB.
 - Each server should have a CBS volume attached to it. (Size and type are irrelevant.)
 - All three servers should have a private Cloud Network shared between them.
--  Login information to all three servers returned in a readable format as the result of the script, including connection information.
+- Login information to all three servers returned in a readable format as the result of the script, including connection information.
 
 ***Worth 6 points***
 
@@ -80,11 +80,11 @@ Challenge 1 script that builds 3 servers.
 ### Challenge 13
 
 Write an application that nukes everything in your Cloud Account. It should:
-Delete all Cloud Servers
-Delete all Custom Images
-Delete all Cloud Files Containers and Objects
-Delete all Databases
-Delete all Networks
-Delete all CBS Volumes
+- Delete all Cloud Servers
+- Delete all Custom Images
+- Delete all Cloud Files Containers and Objects
+- Delete all Databases
+- Delete all Networks
+- Delete all CBS Volumes
 
 ***Worth 3 points***
